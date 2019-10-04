@@ -8,7 +8,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     float groundSpeed = 3.0f;
     [SerializeField]
-    public float gravityStrength = 9.81f;
+    float gravityStrength = 9.81f;
     [SerializeField]
     float jumpSpeed = 1f;
     [SerializeField]
@@ -21,7 +21,6 @@ public class PlayerMovement : MonoBehaviour
     Vector3 velocity;
     Vector3 groundedVelocity;
     Vector3 normal;
-
 
     void Start()
     {
@@ -60,7 +59,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 Vector3 reflection = Vector3.Reflect(velocity, normal); //reflect the normal of the wall
                 Vector3 projected = Vector3.ProjectOnPlane(reflection, Vector3.up); //lock the Y axis to evade walljump in the same wall
-                groundedVelocity = projected.normalized*groundSpeed + normal*aerialSpeed;
+                groundedVelocity = projected.normalized * groundSpeed + normal * aerialSpeed; // apply locked direction and force to character  until grounded <- main issue here
             }
             if (canJump)
             {
@@ -69,20 +68,19 @@ public class PlayerMovement : MonoBehaviour
             else if (canDoubleJump)
             {
                 canDoubleJump = false;
-                verticalVelocity += jumpSpeed;
-            }
-            
+                verticalVelocity = jumpSpeed - gravityStrength * Time.deltaTime;
+            }    
         }
        
         myVector.y = verticalVelocity * Time.deltaTime;
 
-
+        //flags to detect collision on bottom and sides
         CollisionFlags flags = _controller.Move(myVector);
         velocity = myVector / Time.deltaTime;
         print(velocity);
         if ((flags & CollisionFlags.Below) != 0)
         { 
-            groundedVelocity = Vector3.ProjectOnPlane (velocity, Vector3.up);
+            groundedVelocity = Vector3.ProjectOnPlane (velocity, Vector3.up); //if grounded store the movement velocity
             canJump = true;
             onWall = false;
             verticalVelocity = 0f;
