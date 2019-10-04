@@ -1,0 +1,79 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    private CharacterController _controller;
+    [SerializeField]
+    float speed = 5.0f;
+    [SerializeField]
+    public float gravityStrength = 9.81f;
+    [SerializeField]
+    float jumpSpeed = 1f;
+    bool canJump = false;
+    bool onWall = false;
+    Vector3 velocity;
+    float verticalVelocity;
+    Vector3 groundedVelocity;
+    Vector3 normal;
+
+    void Start()
+    {
+        _controller = GetComponent<CharacterController>();  
+    }
+
+    void Update()
+    {
+        Vector3 myVector = new Vector3(0,0,0);
+        if (_controller.isGrounded)
+        { 
+        myVector.x = Input.GetAxis("Horizontal");
+        myVector = Vector3.ClampMagnitude(myVector, 1f);
+        myVector = myVector * speed * Time.deltaTime;
+        }
+        else
+        {
+            myVector = groundedVelocity;
+            myVector *= Time.deltaTime;
+        }
+        verticalVelocity = verticalVelocity - gravityStrength * Time.deltaTime;
+
+        if (Input.GetButtonDown("Jump"))
+        {
+            if (onWall)
+            
+                groundedVelocity = Vector3.Reflect(groundedVelocity, normal);
+            
+            if (canJump)
+            {
+                verticalVelocity += jumpSpeed;
+            }
+            
+        }
+        myVector.y = verticalVelocity * Time.deltaTime;
+
+        CollisionFlags flags = _controller.Move(myVector);
+        velocity = myVector / Time.deltaTime;
+
+        if ((flags & CollisionFlags.Below) != 0) 
+        {
+            groundedVelocity =Vector3.ProjectOnPlane( velocity, Vector3.up);
+            canJump = true;
+            onWall = false;
+            verticalVelocity = -3f;
+        }
+        else if ((flags & CollisionFlags.Sides) != 0)
+        {
+            canJump = true;
+            onWall = true;
+        }
+        else canJump = false;
+        onWall = false;
+    }
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        normal = hit.normal;
+        
+    }
+}
